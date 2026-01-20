@@ -150,6 +150,23 @@ spring.sql.init.mode=always
 
 ---
 
+## Images
+
+<img width="1920" height="877" alt="1" src="https://github.com/user-attachments/assets/cc83160e-6fde-462c-86a1-59febf8285c8" />
+---
+<img width="1909" height="867" alt="2" src="https://github.com/user-attachments/assets/b2e7fd9d-bbbe-44c4-a430-eb86300fd9c0" />
+---
+<img width="1862" height="870" alt="3" src="https://github.com/user-attachments/assets/05145ddc-79ce-4337-9731-9a7842c7207d" />
+---
+<img width="1873" height="867" alt="4" src="https://github.com/user-attachments/assets/b4ba9709-406c-4c96-8ebf-08b3e46c015d" />
+---
+<img width="1894" height="861" alt="5" src="https://github.com/user-attachments/assets/4aaea885-e95e-4bc0-b3b9-51cc65a84fd0" />
+---
+<img width="1887" height="855" alt="6" src="https://github.com/user-attachments/assets/7ce37e81-cc1c-4c21-b1bf-5b3ea3495402" />
+---
+<img width="1887" height="849" alt="7" src="https://github.com/user-attachments/assets/acbcdd9d-e13d-4e42-b326-fd42617f16e1" />
+---
+
 ## Usage
 
 ### Run the Application
