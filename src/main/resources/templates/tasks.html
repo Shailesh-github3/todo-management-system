@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Task Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* 1. THEME VARIABLES */
+        :root {
+            --bg-body: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --input-bg: #ffffff;
+            --border-color: #dee2e6;
+            --btn-primary: #0d6efd;
+            --placeholder-color: #6c757d;
+            --slider-bg: #ccc;
+        }
+
+        body.dark-mode {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #adb5bd;
+            --input-bg: #2d2d2d;
+            --border-color: #444444;
+            --btn-primary: #3d8bfd;
+            --placeholder-color: #aaaaaa;
+            --slider-bg: #3d3d3d;
+        }
+
+        /* 2. BASE STYLES */
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .form-control, .form-select {
+            background-color: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .form-control::placeholder {
+            color: var(--placeholder-color) !important;
+            opacity: 0.8;
+        }
+
+        .text-muted { color: var(--text-muted) !important; }
+        h1, h2, h3, h4, h5, h6 { color: var(--text-main); }
+
+        /* 3. CUSTOM ICON TOGGLE (Sun/Moon) */
+        .theme-switch {
+            display: inline-block;
+            height: 28px;
+            position: relative;
+            width: 54px;
+        }
+
+        .theme-switch input { display: none; }
+
+        .slider {
+            background-color: var(--slider-bg);
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--border-color);
+        }
+
+        .slider:before {
+            background-color: #fff;
+            bottom: 3px;
+            content: "🌙";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            height: 20px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 20px;
+            border-radius: 50%;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider { background-color: var(--btn-primary); }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            content: "☀️";
+        }
+
+        /* 4. TASK STYLES */
+        .text-strikethrough {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .task-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-completed {
+            background-color: var(--bg-body) !important;
+            opacity: 0.8;
+        }
+
+        /* Sort Button Visibility in Dark Mode */
+        body.dark-mode .btn-outline-secondary {
+            color: #e0e0e0;
+            border-color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container mt-5" style="max-width: 900px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h1 class="mb-0 fw-bold">My Tasks</h1>
+
+        <form th:action="@{/tasks}" method="get" class="d-flex gap-2 flex-grow-1 mx-3" style="max-width: 350px;">
+            <input type="text" name="keyword" class="form-control" placeholder="Search tasks..." th:value="${searchKeyword}">
+            <button type="submit" class="btn btn-outline-secondary">Search</button>
+            <a th:href="@{/tasks}" class="btn btn-outline-secondary">Clear</a>
+        </form>
+
+        <div class="d-flex align-items-center gap-2">
+            <a th:href="@{/tasks/export}" class="btn btn-success btn-sm">
+                📥 Export CSV
+            </a>
+
+            <a th:href="@{/profile}" class="btn btn-outline-secondary btn-sm">Profile</a>
+
+            <label class="theme-switch ms-1" for="themeToggle">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                <span class="slider"></span>
+            </label>
+
+            <span class="fw-bold text-muted d-none d-md-inline ms-2" th:text="${#authentication.name}">User</span>
+
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <h5 class="card-title mb-0">Progress</h5>
+                    <small class="text-muted" th:text="${'Completed: ' + completedTasks + ' / ' + totalTasks}">0 / 0</small>
+                </div>
+                <h2 class="mb-0 fw-bold text-success" th:text="${progressPercent + '%'}">0%</h2>
+            </div>
+            <div class="progress" style="height: 12px; background-color: #e9ecef; border-radius: 10px;">
+                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                     role="progressbar" th:style="'width:' + ${progressPercent} + '%'"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <form th:action="@{/tasks}" method="post" th:object="${task}" class="card shadow-sm mb-4 p-3 border-0">
+        <div class="mb-3">
+            <label class="form-label fw-bold">Task Title</label>
+            <input type="text" th:field="*{title}" class="form-control" placeholder="What needs to be done?" required>
+        </div>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label small fw-bold">Due Date</label>
+                <input type="date" th:field="*{dueDate}" class="form-control" required>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label small fw-bold">Priority</label>
+                <select th:field="*{priority}" class="form-select" required>
+                    <option value="" disabled selected>Priority</option>
+                    <option th:each="p : ${allPriorities}" th:value="${p}" th:text="${p}"></option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label small fw-bold">Status</label>
+                <select th:field="*{status}" class="form-select" required>
+                    <option value="" disabled selected>Status</option>
+                    <option th:each="s : ${allStatuses}" th:value="${s}" th:text="${s.name().replace('_',' ')}"></option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label small fw-bold">Category</label>
+                <select th:field="*{category}" class="form-select" required>
+                    <option value="" disabled selected>Category</option>
+                    <option th:each="c : ${allCategories}" th:value="${c}" th:text="${c}">Category</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Add Task</button>
+    </form>
+
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body">
+            <h6 class="mb-2 fw-bold text-muted text-uppercase" style="font-size: 0.7rem;">Filters</h6>
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <a th:href="@{/tasks}" class="btn btn-sm rounded-pill" th:classappend="${selectedStatus == null and selectedPriority == null and selectedCategory == null} ? 'btn-dark' : 'btn-outline-secondary'">All</a>
+                <a th:each="s : ${allStatuses}" th:href="@{/tasks(status=${s.name()})}" class="btn btn-sm rounded-pill"
+                   th:classappend="${selectedStatus != null and selectedStatus.name() == s.name()} ? 'btn-primary' : 'btn-outline-secondary'" th:text="${s.name().replace('_',' ')}"></a>
+                <a th:each="p : ${allPriorities}" th:href="@{/tasks(priority=${p.name()})}" class="btn btn-sm rounded-pill"
+                   th:classappend="${selectedPriority != null and selectedPriority.name() == p.name()} ? 'btn-warning text-dark' : 'btn-outline-secondary'" th:text="${p.name()}"></a>
+            </div>
+
+            <h6 class="mb-2 fw-bold text-muted text-uppercase" style="font-size: 0.7rem;">Sort By</h6>
+            <div class="d-flex gap-2">
+                <a th:href="@{/tasks(sort='date')}" class="btn btn-sm" th:classappend="${selectedSort == 'date'} ? 'btn-dark' : 'btn-outline-secondary'">Date</a>
+                <a th:href="@{/tasks(sort='status')}" class="btn btn-sm" th:classappend="${selectedSort == 'status'} ? 'btn-dark' : 'btn-outline-secondary'">Status</a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(tasks)}" class="text-center py-5 text-muted">No tasks found.</div>
+
+    <div th:each="task : ${tasks}" class="card task-card mb-3 border-0 shadow-sm" th:classappend="${task.status.name() == 'COMPLETED'} ? 'card-completed'">
+        <div class="card-body d-flex justify-content-between align-items-center p-3">
+            <div>
+                <h5 class="mb-1 fw-bold" th:classappend="${task.status.name() == 'COMPLETED'} ? 'text-strikethrough'" th:text="${task.title}"></h5>
+                <div class="mb-0">
+                    <span class="badge rounded-pill" th:classappend="${task.status.name() == 'COMPLETED'} ? 'bg-success' : 'bg-primary'" th:text="${task.status.name().replace('_',' ')}"></span>
+                    <span class="badge rounded-pill ms-1" th:classappend="${task.priority.name() == 'HIGH'} ? 'bg-danger' : 'bg-info text-dark'" th:text="${task.priority.name()}"></span>
+                    <small class="text-muted ms-2" th:if="${task.dueDate}">Due: <span th:text="${#temporals.format(task.dueDate, 'MMM dd, yyyy')}"></span></small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a th:href="@{/tasks/{id}/edit(id=${task.id})}" class="btn btn-outline-primary btn-sm">Edit</a>
+                <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this task?')">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const themeToggle = document.getElementById('themeToggle');
+
+    // Initialize Theme from LocalStorage
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.checked = true;
+        }
+    });
+
+    // Toggle Theme Function
+    function toggleTheme() {
+        if (themeToggle.checked) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+</script>
+</body>
+</html>
